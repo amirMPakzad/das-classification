@@ -3,7 +3,7 @@ set -e
 
 CONFIG=${1:-configs/app.yaml}
 
-cd /../das-classification
+cd "../" 
 git pull
 source venv/bin/activate
 
