@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from das_event.data.constants import LABELS
+from das_classification.data.constants import LABELS
 from .metrics import confusion_matrix, per_class_accuracy
 
 
