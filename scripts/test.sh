@@ -13,4 +13,6 @@ LOG="logs/test_$(date +%Y%m%d_%H%M%S).log"
 echo "Config: $CONFIG"
 echo "Logging to: $LOG"
 
+LOG="logs/test_$(date +%Y%m%d_%H%M%S).log"
+
 python -m das_classification.cli test --config "$CONFIG" "$@" 2>&1 | tee "$LOG"

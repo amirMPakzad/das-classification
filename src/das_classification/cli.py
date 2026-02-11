@@ -144,7 +144,6 @@ def test(
     seed_everything(SeedConfig(cfg.run.seed, deterministic=cfg.run.deterministic))
 
     ds = DASDataset(cfg.dataset.root, cfg.dataset.classes)
-    run_dir = make_run_dir(cfg.run.base_dir, name=cfg.run.name)
     logger = setup_logger(run_dir)
     logger.info(f"classes: {ds.classes}")
     logger.info(f"len: {len(ds)}")
