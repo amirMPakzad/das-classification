@@ -8,7 +8,7 @@ class DASDataset(Dataset):
     Reads per-class HDF5 files. Each file contains dataset 'x' with shape (N, F).
     y is returned as class index (0..C-1) based on file order (sorted by class name).
     """
-    def __init__(self, h5_dir: str, classes):
+    def __init__(self, h5_dir: str, classes = None):
         self.h5_dir = os.path.abspath(h5_dir)
 
         if not classes:
