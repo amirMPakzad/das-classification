@@ -17,11 +17,10 @@ from das_classification.train.loop import train_loop, TrainConfig
 from das_classification.train.test import test_loop, load_checkpoint, save_report_txt
 from das_classification.viz.confusion import save_confusion_matrix_png
 from das_classification.viz.plot_history import plot_history
+from das_classification.data.splits import ensure_splits
+
 
 app = typer.Typer(no_args_is_help=True)
-
-
-
 
 @app.command()
 def sanity(
@@ -51,18 +50,28 @@ def train(
 
     #seed 
     seed_everything(SeedConfig(seed=cfg.run.seed, deterministic=cfg.run.deterministic))
+    
+
 
     ds = DASDataset(cfg.dataset.root, cfg.dataset.classes)
     print("classes:", ds.classes)
     print("len:", len(ds))
 
+
     splits_dir = Path(cfg.run.splits_dir)
-    def _load(name: str):
-        with open(f"{splits_dir}/{name}.json", "r") as f:
-            return json.load(f)
-    
-    train_idx = _load("train")
-    val_idx = _load("val")
+
+    ensure_splits(
+        ds,
+        splits_dir,
+        train_ratio=cfg.dataset.split.train,
+        val_ratio=cfg.dataset.split.val,
+        test_ratio=cfg.dataset.split.test,
+        seed=cfg.run.seed,
+    )
+
+    train_idx = json.loads((splits_dir/"train.json").read_text())
+    val_idx   = json.loads((splits_dir/"val.json").read_text())
+
 
     train_ds = Subset(ds, train_idx)
     val_ds = Subset(ds, val_idx)
