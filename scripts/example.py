@@ -26,7 +26,7 @@ def main():
 
     # Initializing the DASDataLoader with dataset parameters
     parser = DASDataLoader(
-        '../data',  # Path to the dataset directory
+        '/mnt/data/DAS-dataset',  # Path to the dataset directory
         2048,  # Sample length
         transform=fft,  # Applying FFT as a preprocessing step
         fsize=8192,  # Window size for sliding window segmentation
