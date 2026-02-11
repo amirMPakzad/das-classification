@@ -52,8 +52,9 @@ def train_loop(
         n_batches = 0
 
         for batch in train_loader:
-            x = batch.x.to(device)
-            y = batch.y.to(device)
+            x, y = batch 
+            x = x.to(device)
+            y = y.to(device)
 
             logits = model(x)
             loss = F.cross_entropy(

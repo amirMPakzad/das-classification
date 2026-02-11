@@ -44,8 +44,9 @@ def test_loop(
     cm_total = torch.zeros((num_classes, num_classes), dtype=torch.long)
 
     for batch in loader:
-        x = batch.x.to(device)
-        y = batch.y.to(device)
+        x, y = batch 
+        x = x.to(device)
+        y = y.to(device)
 
         logits = model(x)
         loss = F.cross_entropy(logits, y)
