@@ -1,0 +1,29 @@
+run:
+  name: "exp001"
+  base_dir: "runs"
+  seed: 42
+  deterministic: true
+  splits_dir: "data/splits"   
+
+dataset:
+  root: "data/processed"   
+  classes:
+    - construction
+    - manipulation
+    - regular
+
+train:
+  epochs: 30
+  batch_size: 256
+  num_workers: 2
+  lr: 1e-3
+  weight_decay: 1e-4
+  grad_clip: 1.0
+  log_interval: 50
+
+  imbalance:
+    enabled: true
+    method: "both"         # "weights" | "sampler" | "both"
+    power: 1.0
+    min_count: 1
+    max_weight: 100.0
