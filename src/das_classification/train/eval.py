@@ -25,8 +25,11 @@ def evaluate(model: nn.Module, loader: DataLoader, device: str) -> EvalResult:
     n = 0 
 
     for batch in loader:
-        x = batch.x.to(device)
-        y = batch.y.to(device)
+        x, y = batch
+        x = x.to(device)
+        y = y.to(device)
+
+        x = x.unsqueeze(1)
 
         logits = model(x)
         loss = F.cross_entropy(logits, y)
