@@ -3,9 +3,9 @@ set -e
 
 CONFIG=${1:-configs/app.yaml}
 
-cd /home/ubuntu/das-classification
+cd /../das-classification
 git pull
 source venv/bin/activate
 
 
-python -m das_classification.cli train --config "$CONFIG"
+python -m das_classification.cli train --config "$CONFIG" 2>&1 | tee "$LOG"

@@ -216,7 +216,7 @@ def test(
 
 
 
-@app.command
+@app.command()
 def plot_history_cmd(
     run_dir: str = typer.Option(..., help="Run directory that contains history.jsonl"),
     save_dir: str = typer.Option("", help="Optional: directory to save loss.png/acc.png"),
