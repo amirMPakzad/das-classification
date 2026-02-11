@@ -1,3 +1,14 @@
+"""
+This code is adapted from:
+
+Comprehensive Dataset for Event Classification Using
+Distributed Acoustic Sensing (DAS) Systems
+
+Source:
+https://springernature.figshare.com/articles/dataset/Comprehensive_Dataset_for_Event_Classification_Using_Distributed_Acoustic_Sensing_DAS_Systems/27004732
+"""
+
+
 import os
 import logging
 from glob import glob
