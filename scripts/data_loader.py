@@ -105,7 +105,7 @@ class DASDataLoader:
         labels = []
 
         # Use multiprocessing to speed up label parsing across different directories
-        with Pool(12) as p:
+        with Pool(4) as p:
             results = p.map(self._parse_label, os.listdir(self.data_dir))
             for s, l in results:
                 samples.extend(s)
