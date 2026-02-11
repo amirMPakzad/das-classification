@@ -59,5 +59,5 @@ class DASConvClassifier(nn.Module):
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         x = self.stem(x)
         x = self.pool(x)
-        x = self.pool(x)
+        x = self.head(x)
         return x
