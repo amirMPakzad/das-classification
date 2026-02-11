@@ -16,7 +16,6 @@ from das_classification.utils.logging import setup_logger, make_run_dir
 from das_classification.train.loop import train_loop, TrainConfig
 from das_classification.train.test import test_loop, load_checkpoint, save_report_txt
 from das_classification.viz.confusion import save_confusion_matrix_png
-from das_classification.viz.quicklook import quicklook
 from das_classification.viz.plot_history import plot_history
 
 app = typer.Typer(no_args_is_help=True)
