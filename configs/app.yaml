@@ -1,5 +1,5 @@
 run:
-  name: "exp001"
+  name: "experiment"
   base_dir: "runs"
   seed: 42
   deterministic: false
@@ -27,7 +27,7 @@ train:
 
   imbalance:
     enabled: true
-    method: "both"         # "weights" | "sampler" | "both"
+    method: "weights"         # "weights" | "sampler" | "both"
     power: 1.0
     min_count: 1
     max_weight: 100.0
