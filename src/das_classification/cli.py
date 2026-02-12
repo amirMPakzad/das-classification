@@ -43,11 +43,10 @@ def sanity(
 
 @app.command()  
 def train(
-    run_name: str = typer.Option(..., help="Name of this experiment"),
     config: str = typer.Option(..., help="Path to an app config YAML")
 ):
     cfg = load_config(config)
-    run_dir = make_run_dir(cfg.run.base_dir, name=run_name)
+    run_dir = make_run_dir(cfg.run.base_dir, name=cfg.run.name)
     logger = setup_logger(run_dir)
 
     #seed 
