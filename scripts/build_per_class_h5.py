@@ -103,7 +103,7 @@ if __name__ == "__main__":
     labels = ["regular", "construction", "manipulation"]
 
     # decimation per class
-    decim = {"regular": 50}
+    decim = {"regular":10}
 
     for label in labels:
         build_one_class(
@@ -113,6 +113,6 @@ if __name__ == "__main__":
             sample_len=2048,
             fsize=8192,
             shift=2048,
-            drop_noise=True,               # ✅ پایپ‌لاین دقیق
+            drop_noise=True,              
             decimate=decim.get(label, 1),
         )
