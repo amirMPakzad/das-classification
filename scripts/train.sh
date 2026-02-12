@@ -15,5 +15,5 @@ echo "Logging to $LOG"
 
 python -m das_classification.cli train \
     --config "$CONFIG"\
-    --run_name "$RUN_NAME"\
+    --run-name "$RUN_NAME"\
     2>&1 | tee "$LOG"

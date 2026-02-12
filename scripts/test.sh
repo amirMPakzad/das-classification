@@ -21,6 +21,6 @@ echo "Logging to: $LOG"
 
 python -m das_classification.cli test \
     --config "$CONFIG" \
-    --run_dir "$RUN_DIR" \
+    --run-dir "$RUN_DIR" \
     "$@" \
     2>&1 | tee "$LOG"
