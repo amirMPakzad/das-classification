@@ -1,19 +1,18 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-CONFIG="${1:-configs/app.yaml}"
-RUN_NAME="${2:-EXP}"
+CONFIG="configs/app.yaml"
 
-cd "../" 
-git pull
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config) CONFIG="$2"; shift 2 ;;
+    *) echo "Unknown arg: $1"; exit 1 ;;
+  esac
+done
+
+cd ..
 source venv/bin/activate
 
-mkdir -p logs
-LOG="logs/train_${RUN_NAME}_$(date +%Y%m%d_%H%M%S).log"
+echo "Config: $CONFIG"
 
-echo "Logging to $LOG"
-
-python -m das_classification.cli train \
-    --config "$CONFIG"\
-    --run-name "$RUN_NAME"\
-    2>&1 | tee "$LOG"
+python -m das_classification.cli train --config "$CONFIG"

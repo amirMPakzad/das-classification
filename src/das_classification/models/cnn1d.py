@@ -14,7 +14,7 @@ class ModelConfig:
     in_channels: int
     num_classes: int
     base_width: int = 64
-    dropout: float = 0.1
+    dropout: float = 0.3
 
 
 class ConvBlock(nn.Module):
