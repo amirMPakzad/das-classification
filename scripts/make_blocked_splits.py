@@ -6,6 +6,7 @@ from das_classification.data.das_dataset import DASDataset
 
 
 def main(
+    config ,
     out_dir: str = "../data/splits",
     train_ratio: float = 0.8,
     val_ratio: float = 0.1,

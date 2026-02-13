@@ -13,8 +13,6 @@ Dataset and methodology adapted from:
 ```bash
 git clone <repo-url>
 cd das-classification
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 

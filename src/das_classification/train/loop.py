@@ -63,7 +63,7 @@ def train_loop(
                 logits, 
                 y,
                 weight=(class_weights.to(device) if class_weights is not None else None),
-                label_smoothing=0.1,
+                label_smoothing=0.05,
                 )
 
             opt.zero_grad(set_to_none=True)
