@@ -1,3 +1,18 @@
+Metadata-Version: 2.4
+Name: das-classification
+Version: 0.1.0
+Summary: DAS Event Classification Pipeline
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: numpy
+Requires-Dist: scipy
+Requires-Dist: h5py
+Requires-Dist: torch
+Requires-Dist: typer
+Requires-Dist: pyyaml
+Requires-Dist: matplotlib
+Requires-Dist: rich
+
 # DAS Classification
 
 Deep learning–based event classification using Distributed Acoustic Sensing (DAS) signals.

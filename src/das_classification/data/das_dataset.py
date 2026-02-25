@@ -1,84 +1,94 @@
-import os
-import h5py
 import torch
+import os
+import json
 from torch.utils.data import Dataset
 
+
+def build_class_mapping(root_dir: str):
+    class_names = sorted(
+        [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
+    )
+    class_to_idx = {name: i for i, name in enumerate(class_names)}
+    return class_names, class_to_idx
+
+
 class DASDataset(Dataset):
-    """
-    Reads per-class HDF5 files. Each file contains dataset 'x' with shape (N, F).
-    y is returned as class index (0..C-1) based on file order (sorted by class name).
-    """
-    def __init__(self, h5_dir: str, classes = None):
-        self.h5_dir = os.path.abspath(h5_dir)
+    def __init__(self, root_dir: str, split: str, transform=None, target_transform=None):
+        assert split in {"train", "val", "test"}, "split must be one of train, val or test"
+        self.root_dir = root_dir
+        self.split = split
+        self.transform = transform
+        self.target_transform = target_transform
 
-        if not classes:
-            raise ValueError(
-                "classes must be provided explicitly (e.g. from config) "
-                "to keep label indices stable."
-            )
-        
-        self.classes = list(classes)
-        self.class_to_idx = {c: i for i, c in enumerate(self.classes)}
+        self.class_names, self.class_to_idx = build_class_mapping(root_dir)
 
-        self.paths = [os.path.join(self.h5_dir, f"{c}.h5") for c in self.classes]
-        for p in self.paths:
-            if not os.path.isfile(p):
-                raise FileNotFoundError(f"Missing class file: {p}")
+        # هر آیتم دیتاست = (path, sample_idx)
+        self.index = self._build_index()
 
-        # Build index mapping: global idx -> (file_i, local_idx)
-        self.offsets = []
-        total = 0
-        self.lengths = []
-        for p in self.paths:
-            with h5py.File(p, "r") as hf:
-                n = hf["x"].shape[0]
-            self.offsets.append(total)
-            self.lengths.append(n)
-            total += n
-        self.total = total
+        # cache برای جلوگیری از load تکراری فایل
+        self._cache_path = None
+        self._cache_payload = None
 
-        self._handles = [None] * len(self.paths)
+    def _scan_files(self):
+        files = []
+        prefix = f"{self.split}_"  # خیلی مهم: train_ / val_ / test_
+        for class_name in self.class_names:
+            class_dir = os.path.join(self.root_dir, class_name)
+            for dirpath, _, filenames in os.walk(class_dir):
+                for fn in filenames:
+                    if fn.endswith(".pt") and fn.startswith(prefix):
+                        files.append(os.path.join(dirpath, fn))
 
-    def get_meta(self, idx: int):
-        file_i = 0
-        while file_i + 1 < len(self.offsets) and idx >= self.offsets[file_i + 1]:
-            file_i += 1
-        local_idx = idx - self.offsets[file_i]
+        if not files:
+            raise RuntimeError(f"Found no .pt files for split='{self.split}' under root='{self.root_dir}'")
+        return files
 
-        self._ensure_open(file_i)
-        hf = self._handles[file_i]
-        pos = int(hf["pos"][local_idx])
-        ch  = int(hf["ch"][local_idx])
-        src = hf["src"][local_idx]
-        if isinstance(src, bytes):
-            src = src.decode("utf-8")
-        return {"pos": pos, "ch": ch, "src": src, "file_i": file_i, "local_idx": int(local_idx)}
+    def _build_index(self):
+        index = []
+        for path in self._scan_files():
+            payload = torch.load(path, map_location="cpu")
+            if not isinstance(payload, dict) or "y" not in payload or "x" not in payload:
+                raise RuntimeError(f"Bad payload in {path} (expected dict with keys x,y,...)")
+
+            n = len(payload["y"])
+            for i in range(n):
+                index.append((path, i))
+        return index
 
     def __len__(self):
-        return self.total
+        return len(self.index)
 
-    def _ensure_open(self, i):
-        if self._handles[i] is None:
-            self._handles[i] = h5py.File(self.paths[i], "r")
+    def _load_cached(self, path):
+        if self._cache_path != path:
+            self._cache_path = path
+            self._cache_payload = torch.load(path, map_location="cpu")
+        return self._cache_payload
 
     def __getitem__(self, idx):
-        # find which file
-        # (linear scan is fine for few classes; if many, we can binary search)
-        file_i = 0
-        while file_i + 1 < len(self.offsets) and idx >= self.offsets[file_i + 1]:
-            file_i += 1
-        local_idx = idx - self.offsets[file_i]
+        path, i = self.index[idx]
+        payload = self._load_cached(path)
 
-        self._ensure_open(file_i)
-        x = self._handles[file_i]["x"][local_idx]  # numpy -> h5py returns array-like
-        y = file_i
+        x = payload["x"][i]
+        y = payload["y"][i]
 
-        return torch.tensor(x, dtype=torch.float32), torch.tensor(y, dtype=torch.long)
+        if self.transform:
+            x = self.transform(x)
+        if self.target_transform:
+            y = self.target_transform(y)
 
-    def __del__(self):
-        for h in self._handles:
-            try:
-                if h is not None:
-                    h.close()
-            except Exception:
-                pass
+        return x, y
+
+    def save_mapping(self, out_path: str):
+        obj = {"class_names_sorted": self.class_names, "class_to_idx": self.class_to_idx}
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2)
+
+if __name__ == "__main__":
+    root = "processed_splits"
+    train_ds = DASDataset(root, "train")
+    val_ds = DASDataset(root, "val")
+    test_ds = DASDataset(root, "test")
+    train_ds.save_mapping(os.path.join(root, "class_mapping.json"))
+    print(len(train_ds))
+    print(len(val_ds))
+    print(len(test_ds))

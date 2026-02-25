@@ -1,0 +1,24 @@
+{
+  "class_names_sorted": [
+    "auto",
+    "construction",
+    "fence",
+    "longboard",
+    "manipulation",
+    "openclose",
+    "regular",
+    "running",
+    "walking"
+  ],
+  "class_to_idx": {
+    "auto": 0,
+    "construction": 1,
+    "fence": 2,
+    "longboard": 3,
+    "manipulation": 4,
+    "openclose": 5,
+    "regular": 6,
+    "running": 7,
+    "walking": 8
+  }
+}

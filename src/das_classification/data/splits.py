@@ -37,7 +37,6 @@ def ensure_splits(ds, splits_dir: Path,
         n_va = max(min_channels_per_split, int(n_ch * val_ratio))
     
         if n_tr + n_va >= n_ch:
-           
             n_tr = max(1, n_ch - 2)
             n_va = 1
 
@@ -68,6 +67,8 @@ def ensure_splits(ds, splits_dir: Path,
     train_p.write_text(json.dumps(train_idx), encoding="utf-8")
     val_p.write_text(json.dumps(val_idx), encoding="utf-8")
     test_p.write_text(json.dumps(test_idx), encoding="utf-8")
+
+
 
 
 

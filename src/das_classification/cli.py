@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-
+import os
 import typer
 import torch
 from torch.utils.data import DataLoader, Subset
@@ -23,21 +23,6 @@ from das_classification.data.splits import ensure_splits
 
 app = typer.Typer(no_args_is_help=True)
 
-@app.command()
-def sanity(
-    config: str = typer.Option(..., help="Path to an app config YAML"),
-    batch_size: int = 8,
-    num_workers: int = 0,
-    keep_negatives: bool = False,
-):
-    cfg = load_config(config)
-
-    ds = DASDataset(h5_dir=cfg.dataset.root)
-    typer.echo(f"Samples: {len(ds)}")
-
-    dl = DataLoader(ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    batch = next(iter(dl))
-    typer.echo(f"x: {batch.x.shape} | y: {batch.y.shape}")
 
 
 
@@ -51,39 +36,24 @@ def train(
 
     #seed 
     seed_everything(SeedConfig(seed=cfg.run.seed, deterministic=cfg.run.deterministic))
-    
 
+    root = "data/processed_splits"
+    train_ds = DASDataset(root, "train")
+    val_ds = DASDataset(root, "val")
+    test_ds = DASDataset(root, "test")
+    train_ds.save_mapping("class_mapping.json")
 
-    ds = DASDataset(cfg.dataset.root, cfg.dataset.classes)
-    print("classes:", ds.classes)
-    print("len:", len(ds))
+    print("classes:", train_ds.class_names)
+    print("len:", len(train_ds))
 
-
-    splits_dir = Path(cfg.run.splits_dir)
-
-    ensure_splits(
-        ds,
-        splits_dir,
-        train_ratio=cfg.dataset.split.train,
-        val_ratio=cfg.dataset.split.val,
-        test_ratio=cfg.dataset.split.test,
-        seed=cfg.run.seed,
-    )
-
-    train_idx = json.loads((splits_dir/"train.json").read_text())
-    val_idx   = json.loads((splits_dir/"val.json").read_text())
-
-
-    train_ds = Subset(ds, train_idx)
-    val_ds = Subset(ds, val_idx)
 
     class_weights = None
     sampler = None
 
-    num_classes = len(ds.classes)
+    num_classes = len(train_ds.class_names)
 
     if cfg.train.imbalance.enabled:
-        counts = count_labels(ds, indices=train_idx, num_classes=num_classes)
+        counts = count_labels(train_ds, num_classes=num_classes)
         cw = make_class_weights(counts, cfg.train.imbalance)
 
         logger.info(f"class counts: {counts.tolist()}")
@@ -113,8 +83,6 @@ def train(
         pin_memory=True,
     )
 
-    num_classes = len(ds.classes)
-
     model = DASConvClassifier(ModelConfig(in_channels=1, num_classes=num_classes))
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -142,19 +110,17 @@ def test(
     cfg = load_config(config)
     seed_everything(SeedConfig(cfg.run.seed, deterministic=cfg.run.deterministic))
 
-    ds = DASDataset(cfg.dataset.root, cfg.dataset.classes)
+    root = "data/processed_splits"
+    ds = DASDataset(root, "test")
+
     logger = setup_logger(Path(run_dir))
-    logger.info(f"classes: {ds.classes}")
+    logger.info(f"classes: {ds.class_names}")
     logger.info(f"len: {len(ds)}")
 
-    # --- load test split ---
-    splits_dir = Path(cfg.run.splits_dir)
-    with open(splits_dir / "test.json", "r") as f:
-        test_idx = json.load(f)
 
-    test_ds = Subset(ds, test_idx)
+
     loader = DataLoader(
-        test_ds,
+        ds,
         batch_size=cfg.train.batch_size,
         shuffle=False,
         num_workers=cfg.train.num_workers,
@@ -164,8 +130,8 @@ def test(
     # --- model shape ---
     x0, _ = ds[0]  # dataset returns (x, y)
     in_channels = int(x0.shape[0])
-    num_classes = len(ds.classes)
-    labels = list(ds.classes)  
+    num_classes = len(ds.class_names)
+    labels = list(ds.class_names)
 
     model = DASConvClassifier(
         ModelConfig(in_channels=1, num_classes=num_classes)
