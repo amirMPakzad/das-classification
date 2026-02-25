@@ -37,10 +37,9 @@ def train(
     #seed 
     seed_everything(SeedConfig(seed=cfg.run.seed, deterministic=cfg.run.deterministic))
 
-    root = "data/processed_splits"
+    root = cfg.dataset.root
     train_ds = DASDataset(root, "train")
     val_ds = DASDataset(root, "val")
-    test_ds = DASDataset(root, "test")
     train_ds.save_mapping("class_mapping.json")
 
     print("classes:", train_ds.class_names)
@@ -97,6 +96,7 @@ def train(
         save_dir=str(run_dir)
         )
 
+
     train_loop(model, train_loader, val_loader, device, cfg_train,
                 class_weights=class_weights)
 
@@ -110,7 +110,7 @@ def test(
     cfg = load_config(config)
     seed_everything(SeedConfig(cfg.run.seed, deterministic=cfg.run.deterministic))
 
-    root = "data/processed_splits"
+    root = cfg.dataset.root
     ds = DASDataset(root, "test")
 
     logger = setup_logger(Path(run_dir))
