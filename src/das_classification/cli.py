@@ -7,7 +7,7 @@ import typer
 import torch
 from torch.utils.data import DataLoader, Subset
 
-from das_classification.data.das_dataset import DASDataset
+from das_classification.data.das_dataset import DASDataset, precompute_index
 from das_classification.config import load_config
 from das_classification.models.cnn1d import DASConvClassifier, ModelConfig
 from das_classification.utils.seed import seed_everything, SeedConfig
@@ -31,6 +31,7 @@ def train(
     config: str = typer.Option(..., help="Path to an app config YAML")
 ):
     cfg = load_config(config)
+
     run_dir = make_run_dir(cfg.run.base_dir, name=cfg.run.name)
     logger = setup_logger(run_dir)
 
@@ -38,9 +39,20 @@ def train(
     seed_everything(SeedConfig(seed=cfg.run.seed, deterministic=cfg.run.deterministic))
 
     root = cfg.dataset.root
-    train_ds = DASDataset(root, "train")
-    val_ds = DASDataset(root, "val")
-    train_ds.save_mapping("class_mapping.json")
+    index_dir = os.path.join(root, "_index")
+    os.makedirs(index_dir, exist_ok=True)
+
+    needed = [os.path.join(index_dir, f"index_{sp}.pt") for sp in ("train", "val")]
+    if not all(os.path.exists(p) for p in needed):
+        logger.info(f"Precomputing dataset index files in: {index_dir}")
+        precompute_index(root_dir=root, split="train", out_dir=index_dir, map_location="cpu")
+        precompute_index(root_dir=root, split="val", out_dir=index_dir, map_location="cpu")
+    else:
+        logger.info(f"Using existing dataset index files from: {index_dir}")
+
+    train_ds = DASDataset(root, "train", index_dir=index_dir)
+    val_ds = DASDataset(root, "val", index_dir=index_dir)
+
 
     print("classes:", train_ds.class_names)
     print("len:", len(train_ds))
@@ -111,7 +123,8 @@ def test(
     seed_everything(SeedConfig(cfg.run.seed, deterministic=cfg.run.deterministic))
 
     root = cfg.dataset.root
-    ds = DASDataset(root, "test")
+    index_dir = os.path.join(root, "_index")
+    ds = DASDataset(root, "test", index_dir=index_dir)
 
     logger = setup_logger(Path(run_dir))
     logger.info(f"classes: {ds.class_names}")
