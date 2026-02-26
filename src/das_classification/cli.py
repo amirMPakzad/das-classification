@@ -41,6 +41,7 @@ def train(
     root = cfg.dataset.root
 
     train_ds = DASDataset(root, "train")
+    train_ds = per_class_subset(train_ds, max_per_class=5000, seed=cfg.run.seed)
     val_ds = DASDataset(root, "val")
 
 

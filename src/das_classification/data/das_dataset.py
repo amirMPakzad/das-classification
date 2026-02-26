@@ -2,7 +2,7 @@ import torch
 import os
 import json
 from torch.utils.data import Dataset
-
+from torch.utils.data import Subset
 
 def build_class_mapping(root_dir: str):
     class_names = sorted(
@@ -80,6 +80,32 @@ class DASDataset(Dataset):
         obj = {"class_names_sorted": self.class_names, "class_to_idx": self.class_to_idx}
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=2)
+
+
+
+
+def per_class_subset(dataset, max_per_class=5000, seed=42):
+    g = torch.Generator().manual_seed(seed)
+    buckets = {}
+
+    last_path = None
+    payload = None
+
+    for global_idx, (path, local_i) in enumerate(dataset.index):
+        if path != last_path:
+            payload = torch.load(path, map_location="cpu")
+            last_path = path
+        y = int(payload["y"][local_i])
+        buckets.setdefault(y, []).append(global_idx)
+
+    selected = []
+    for y, idxs in buckets.items():
+        idxs = torch.tensor(idxs)
+        perm = idxs[torch.randperm(len(idxs), generator=g)]
+        selected.extend(perm[: min(max_per_class, len(idxs))].tolist())
+
+    return Subset(dataset, selected)
+
 
 if __name__ == "__main__":
     root = "processed_splits"
