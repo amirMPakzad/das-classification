@@ -8,6 +8,7 @@ import torch
 from torch.utils.data import DataLoader, Subset
 
 from das_classification.data.das_dataset import DASDataset, per_class_subset
+from das_classification.data.das_memmap_dataset import DASMemmapDataset
 from das_classification.config import load_config
 from das_classification.models.cnn1d import DASConvClassifier, ModelConfig
 from das_classification.utils.seed import seed_everything, SeedConfig
@@ -40,16 +41,14 @@ def train(
 
     root = cfg.dataset.root
 
-    train_ds = DASDataset(root, "train")
-    print("classes:", train_ds.class_names)
-    num_classes = len(train_ds.class_names)
+    train_ds = DASMemmapDataset(root, "train")
+    print("classes:", train_ds.class_names_by_id)
+    num_classes = len(train_ds.class_names_by_id)
 
-    train_ds = per_class_subset(train_ds, max_per_class=5000, seed=cfg.run.seed)
-    val_ds = DASDataset(root, "val")
+    val_ds = DASMemmapDataset(root, "val")
 
 
     print("len:", len(train_ds))
-
 
     class_weights = None
     sampler = None
@@ -103,7 +102,7 @@ def train(
         save_dir=str(run_dir)
         )
 
-
+    return
     train_loop(model, train_loader, val_loader, device, cfg_train,
                 class_weights=class_weights)
 
