@@ -19,8 +19,8 @@ dataset:
 
 train:
   epochs: 30
-  batch_size: 256
-  num_workers: 8
+  batch_size: 128
+  num_workers: 4
   lr: 3e-4
   weight_decay: 1e-4
   grad_clip: 1.0
@@ -28,7 +28,7 @@ train:
 
   imbalance:
     enabled: true
-    method: "weights"         # "weights" | "sampler" | "both"
+    method: "sampler"         # "weights" | "sampler" | "both"
     power: 1.0
     min_count: 1
-    max_weight: 100.0
+    max_weight: 20
