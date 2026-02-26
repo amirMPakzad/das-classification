@@ -66,17 +66,13 @@ class DASDataset(Dataset):
 
     def __getitem__(self, idx):
         path, i = self.index[idx]
-        payload = self._load_cached(path)
-
-        x = payload["x"][i]
-        y = payload["y"][i]
-
-        if self.transform:
-            x = self.transform(x)
-        if self.target_transform:
-            y = self.target_transform(y)
-
-        return x, y
+        try:
+            payload = self._load_cached(path)
+            x = payload["x"][i]
+            y = payload["y"][i]
+            return x, y
+        except Exception as e:
+            raise RuntimeError(f"Dataset crash at idx={idx} path={path} local_i={i}") from e
 
     def save_mapping(self, out_path: str):
         obj = {"class_names_sorted": self.class_names, "class_to_idx": self.class_to_idx}
