@@ -102,7 +102,6 @@ def train(
         save_dir=str(run_dir)
         )
 
-    return
     train_loop(model, train_loader, val_loader, device, cfg_train,
                 class_weights=class_weights)
 
