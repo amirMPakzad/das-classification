@@ -75,7 +75,7 @@ def train(
         persistent_workers=False,
         drop_last=True,
         pin_memory=False,
-        prefetch_factor=False
+        prefetch_factor=True
     )
 
     val_loader = DataLoader(
