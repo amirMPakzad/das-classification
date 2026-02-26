@@ -119,7 +119,7 @@ def test(
     ds = DASMemmapDataset(root, "test")
 
     logger = setup_logger(Path(run_dir))
-    logger.info(f"classes: {ds.class_names}")
+    logger.info(f"classes: {ds.class_names_by_id}")
     logger.info(f"len: {len(ds)}")
 
 
