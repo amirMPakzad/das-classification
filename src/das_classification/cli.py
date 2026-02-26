@@ -41,18 +41,20 @@ def train(
     root = cfg.dataset.root
 
     train_ds = DASDataset(root, "train")
+    print("classes:", train_ds.class_names)
+    num_classes = len(train_ds.class_names)
+
     train_ds = per_class_subset(train_ds, max_per_class=5000, seed=cfg.run.seed)
     val_ds = DASDataset(root, "val")
 
 
-    print("classes:", train_ds.class_names)
     print("len:", len(train_ds))
 
 
     class_weights = None
     sampler = None
 
-    num_classes = len(train_ds.class_names)
+
 
     if cfg.train.imbalance.enabled:
         counts = count_labels(train_ds, num_classes=num_classes)
