@@ -7,7 +7,7 @@ import typer
 import torch
 from torch.utils.data import DataLoader, Subset
 
-from das_classification.data.das_dataset import DASDataset
+from das_classification.data.das_dataset import DASDataset, per_class_subset
 from das_classification.config import load_config
 from das_classification.models.cnn1d import DASConvClassifier, ModelConfig
 from das_classification.utils.seed import seed_everything, SeedConfig
