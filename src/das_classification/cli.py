@@ -72,7 +72,7 @@ def train(
         shuffle=(sampler is None),
         sampler=sampler,               
         num_workers=cfg.train.num_workers,
-        persistent_workers=False,
+        persistent_workers=True,
         drop_last=True,
         pin_memory=False,
         prefetch_factor=True

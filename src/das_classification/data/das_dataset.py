@@ -50,7 +50,9 @@ class DASDataset(Dataset):
             if not isinstance(payload, dict) or "y" not in payload or "x" not in payload:
                 raise RuntimeError(f"Bad payload in {path} (expected dict with keys x,y,...)")
 
-            n = len(payload["y"])
+            x = payload["x"]
+            n = x.shape[0] if hasattr(x, "shape") else len(x)
+
             for i in range(n):
                 index.append((path, i))
         return index
