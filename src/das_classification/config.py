@@ -2,7 +2,7 @@
 
 from __future__ import annotations 
 
-from dataclasses import dataclass 
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
 from das_classification.train.imbalance import ImbalanceCfg
@@ -35,7 +35,7 @@ class TrainCfg:
     weight_decay: float = 1e-4
     grad_clip: float = 1.0
     log_interval: int = 20
-    imbalance: ImbalanceCfg = ImbalanceCfg()
+    imbalance: ImbalanceCfg = field(default_factory=ImbalanceCfg)
 
 
 
