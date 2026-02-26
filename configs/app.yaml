@@ -6,7 +6,7 @@ run:
   splits_dir: "data/splits"   
 
 dataset:
-  root: "data/processed_xy_chuncked"
+  root: "data/processed_xy_chunked"
   classes:
     - construction
     - manipulation
