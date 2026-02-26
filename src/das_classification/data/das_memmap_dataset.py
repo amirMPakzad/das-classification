@@ -1,54 +1,66 @@
+import os
 import json
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-from pathlib import Path
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 
 
 class DASMemmapDataset(Dataset):
-    def __init__(self, memmap_dir: str, split: str, transform=None, target_transform=None):
-        assert split in {"train", "val", "test"}
-        self.memmap_dir = Path(memmap_dir)
-        self.split = split
-        self.transform = transform
-        self.target_transform = target_transform
+    """
+    Reads X/y memmaps + index list produced by build_memmap_dataset().
+    Zero-copy reads (memmap) + per-sample indexing.
+    """
 
-        meta_path = self.memmap_dir / f"{split}_meta.json"
+    def __init__(self, root: str, split: str):
+        """
+        root: cfg.dataset.root (folder containing meta.json, X_*.memmap, y_*.memmap, idx_*.npy)
+        split: "train" | "val" | "test"
+        """
+        self.root = os.path.abspath(root)
+
+        meta_path = os.path.join(self.root, "meta.json")
+        if not os.path.exists(meta_path):
+            raise FileNotFoundError(f"meta.json not found in {self.root}")
+
         with open(meta_path, "r", encoding="utf-8") as f:
             self.meta = json.load(f)
 
-        self.N = int(self.meta["total_n"])
-        self.F = int(self.meta["F"])
-        self.x_path = Path(self.meta["x_path"])
-        self.y_path = Path(self.meta["y_path"])
+        x_path = os.path.join(self.root, self.meta["memmap_X"])
+        y_path = os.path.join(self.root, self.meta["memmap_y"])
 
-        # mapping
-        self.class_names_by_id = self.meta["class_names_by_id"]
-        self.class_to_id = self.meta["class_to_id"]
-        self.id_to_class = {int(k): v for k, v in self.meta["id_to_class"].items()}
+        n_total = int(self.meta["n_total"])
+        feat_len = int(self.meta["feature_len"])
 
-        self._X = None
-        self._Y = None
+        self.X = np.memmap(x_path, mode="r", dtype=np.float32, shape=(n_total, feat_len))
+        self.y = np.memmap(y_path, mode="r", dtype=np.int32, shape=(n_total,))
+
+        idx_path = os.path.join(self.root, f"idx_{split}.npy")
+        if not os.path.exists(idx_path):
+            raise FileNotFoundError(f"Split index file not found: {idx_path}")
+        self.indices = np.load(idx_path).astype(np.int64)
+
+        self.split = split
+        self.num_classes = len(self.meta["labels"])
+        self.classes = list(self.meta["labels"])  # ordered class names
+        self.class_to_idx = dict(self.meta["label_to_int"])
+        self.idx_to_class = {int(k): v for k, v in self.meta["int_to_label"].items()}
 
     def __len__(self):
-        return self.N
+        return int(self.indices.shape[0])
 
-    def _ensure_open(self):
-        if self._X is None or self._Y is None:
-            self._X = np.memmap(self.x_path, mode="r", dtype=np.float32, shape=(self.N, self.F))
-            self._Y = np.memmap(self.y_path, mode="r", dtype=np.int64, shape=(self.N,))
+    def __getitem__(self, i: int):
+        j = int(self.indices[i])
+        x = torch.from_numpy(np.array(self.X[j], copy=False))  # (feature_len,)
+        y = torch.tensor(int(self.y[j]), dtype=torch.long)
+        return x, y
 
-    def class_name(self, y: int) -> str:
-        return self.class_names_by_id[int(y)]  # y=0 -> class_names_by_id[0]
 
-    def __getitem__(self, idx):
-        self._ensure_open()
-        x = torch.from_numpy(np.array(self._X[idx], copy=False))
-        y = int(self._Y[idx])
+if __name__ == "__main__":
+    root = "out_dir"
+    train_ds = DASMemmapDataset(root, "train")
+    val_ds = DASMemmapDataset(root, "val")
+    test_ds = DASMemmapDataset(root, "test")
 
-        if self.transform:
-            x = self.transform(x)
-        if self.target_transform:
-            y = self.target_transform(y)
-
-        return x, torch.tensor(y, dtype=torch.long)
+    print(train_ds.num_classes)
+    print(train_ds.classes)
+    print(len(train_ds))

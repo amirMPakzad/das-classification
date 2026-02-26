@@ -21,46 +21,40 @@ from das_classification.viz.plot_history import plot_history
 from das_classification.viz.plot_window import plot_window
 from das_classification.data.splits import ensure_splits
 
-
 app = typer.Typer(no_args_is_help=True)
 
 
-
-
-@app.command()  
+@app.command()
 def train(
-    config: str = typer.Option(..., help="Path to an app config YAML")
+        config: str = typer.Option(..., help="Path to an app config YAML")
 ):
     cfg = load_config(config)
 
     run_dir = make_run_dir(cfg.run.base_dir, name=cfg.run.name)
     logger = setup_logger(run_dir)
 
-    #seed 
+    # seed
     seed_everything(SeedConfig(seed=cfg.run.seed, deterministic=cfg.run.deterministic))
 
     root = cfg.dataset.root
 
     train_ds = DASMemmapDataset(root, "train")
-    print("classes:", train_ds.classes)
-    num_classes = len(train_ds.classes)
+    print("classes:", train_ds.class_names_by_id)
+    num_classes = len(train_ds.class_names_by_id)
 
     val_ds = DASMemmapDataset(root, "val")
-
 
     print("len:", len(train_ds))
 
     class_weights = None
     sampler = None
 
-
-
     if cfg.train.imbalance.enabled:
         counts = count_labels(train_ds, num_classes=num_classes)
         cw = make_class_weights(counts, cfg.train.imbalance)
 
         logger.info(f"class counts: {counts.tolist()}")
-        logger.info(f"class weights: {[round(float(x),3) for x in cw.tolist()]}")
+        logger.info(f"class weights: {[round(float(x), 3) for x in cw.tolist()]}")
 
         if cfg.train.imbalance.method in ("weights", "both"):
             class_weights = cw.to(torch.float32)
@@ -72,7 +66,7 @@ def train(
         train_ds,
         batch_size=cfg.train.batch_size,
         shuffle=(sampler is None),
-        sampler=sampler,               
+        sampler=sampler,
         num_workers=cfg.train.num_workers,
         persistent_workers=True,
         drop_last=True,
@@ -94,22 +88,23 @@ def train(
     logger.info(f"Device: {device}")
 
     cfg_train = TrainConfig(
-        epochs=cfg.train.epochs, 
-        lr=cfg.train.lr, 
-        weight_decay=cfg.train.weight_decay, 
+        epochs=cfg.train.epochs,
+        lr=cfg.train.lr,
+        weight_decay=cfg.train.weight_decay,
         grad_clip=cfg.train.grad_clip,
         log_interval=cfg.train.log_interval,
         save_dir=str(run_dir)
-        )
-    train_loop(model, train_loader, val_loader, device, cfg_train,
-                class_weights=class_weights)
+    )
 
-    
+    train_loop(model, train_loader, val_loader, device, cfg_train,
+               class_weights=class_weights)
+
+
 @app.command()
 def test(
-    config: str = typer.Option(..., help="Path to an app config YAML"),
-    ckpt: str = typer.Option("", help="Checkpoint path. If empty, uses <run_dir>/best.pt"),
-    run_dir: str = typer.Option(..., help="Run directory that contains best.pt/last.pt"),
+        config: str = typer.Option(..., help="Path to an app config YAML"),
+        ckpt: str = typer.Option("", help="Checkpoint path. If empty, uses <run_dir>/best.pt"),
+        run_dir: str = typer.Option(..., help="Run directory that contains best.pt/last.pt"),
 ):
     cfg = load_config(config)
     seed_everything(SeedConfig(cfg.run.seed, deterministic=cfg.run.deterministic))
@@ -118,10 +113,8 @@ def test(
     ds = DASMemmapDataset(root, "test")
 
     logger = setup_logger(Path(run_dir))
-    logger.info(f"classes: {ds.classes}")
+    logger.info(f"classes: {ds.class_names_by_id}")
     logger.info(f"len: {len(ds)}")
-
-
 
     loader = DataLoader(
         ds,
@@ -134,8 +127,8 @@ def test(
     # --- model shape ---
     x0, _ = ds[0]  # dataset returns (x, y)
     in_channels = int(x0.shape[0])
-    num_classes = len(ds.classes)
-    labels = list(ds.classes)
+    num_classes = len(ds.class_names_by_id)
+    labels = list(ds.class_names_by_id)
 
     model = DASConvClassifier(
         ModelConfig(in_channels=1, num_classes=num_classes)
@@ -172,7 +165,7 @@ def test(
 
     # --- plot windows ---
     for i, item in enumerate(res.viz or []):
-        xs, ys, ps = item["x"], item["y"], item["pred"] 
+        xs, ys, ps = item["x"], item["y"], item["pred"]
         k = xs.shape[0]
 
         for j in range(k):
@@ -180,11 +173,10 @@ def test(
                 x=xs[j],
                 y=ys[j],
                 pred=ps[j],
-                idx=i*10 + j,
+                idx=i * 10 + j,
                 labels=labels,
                 run_id=run_dir,
             )
-
 
     logger.info(f"Loaded epoch: {epoch}")
     logger.info(f"test loss: {res.loss:.6f} | test acc: {res.acc:.4f}")
@@ -199,12 +191,11 @@ def test(
     )
 
 
-
 @app.command()
 def plot_history_cmd(
-    run_dir: str = typer.Option(..., help="Run directory that contains history.jsonl"),
-    save_dir: str = typer.Option("", help="Optional: directory to save loss.png/acc.png"),
-    no_show: bool = typer.Option(False, help="Do not open GUI windows"),
+        run_dir: str = typer.Option(..., help="Run directory that contains history.jsonl"),
+        save_dir: str = typer.Option("", help="Optional: directory to save loss.png/acc.png"),
+        no_show: bool = typer.Option(False, help="Do not open GUI windows"),
 ):
     hist_path = str(Path(run_dir) / "history.jsonl")
     plot_history(
@@ -215,7 +206,6 @@ def plot_history_cmd(
     print(f"Plotted history from: {hist_path}")
     if save_dir:
         print(f"Saved figures to: {save_dir}")
-
 
 
 if __name__ == "__main__":
