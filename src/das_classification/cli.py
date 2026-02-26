@@ -116,7 +116,7 @@ def test(
     seed_everything(SeedConfig(cfg.run.seed, deterministic=cfg.run.deterministic))
 
     root = cfg.dataset.root
-    ds = DASDataset(root, "test")
+    ds = DASMemmapDataset(root, "test")
 
     logger = setup_logger(Path(run_dir))
     logger.info(f"classes: {ds.class_names}")
@@ -135,8 +135,8 @@ def test(
     # --- model shape ---
     x0, _ = ds[0]  # dataset returns (x, y)
     in_channels = int(x0.shape[0])
-    num_classes = len(ds.class_names)
-    labels = list(ds.class_names)
+    num_classes = len(ds.class_names_by_id)
+    labels = list(ds.class_names_by_id)
 
     model = DASConvClassifier(
         ModelConfig(in_channels=1, num_classes=num_classes)

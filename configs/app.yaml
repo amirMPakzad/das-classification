@@ -19,8 +19,8 @@ dataset:
 
 train:
   epochs: 30
-  batch_size: 64
-  num_workers: 4
+  batch_size: 128
+  num_workers: 8
   lr: 3e-4
   weight_decay: 1e-4
   grad_clip: 1.0
