@@ -89,9 +89,11 @@ def train(
         num_workers=cfg.train.num_workers,
         pin_memory=True,
     )
-    in_channels = int(train_ds.meta["shape"][1])  # shape is [N, C, T, F]
+
+    mode = "T_as_in_channels"
+    in_channels = int(train_ds.meta["shape"][2])  # shape is [N, C, T, F]
     num_classes = len(train_ds.classes)
-    model = DasConv2dModel(num_classes=num_classes)
+    model = DasConv2dModel(in_channels=in_channels, num_classes=num_classes, mode=mode)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Device: {device}")
@@ -140,9 +142,9 @@ def test(
     num_classes = len(ds.classes)
     labels = list(ds.classes)
 
-    in_channels = int(ds.meta["shape"][1])  # shape is [N, C, T, F]
-    num_classes = len(ds.classes)
-    model = DasConv2dModel(num_classes=num_classes)
+    mode = "T_as_in_channels"
+    in_channels = int(ds.meta["shape"][2])  # T
+    model = DasConv2dModel(in_channels=in_channels, num_classes=len(ds.classes), mode=mode)
 
     device = cfg.run.device if getattr(cfg.run, "device", None) else ("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
