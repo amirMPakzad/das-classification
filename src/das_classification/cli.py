@@ -91,7 +91,7 @@ def train(
     )
     in_channels = int(train_ds.meta["shape"][1])  # shape is [N, C, T, F]
     num_classes = len(train_ds.classes)
-    model = DasConv2dModel(in_channels=in_channels, num_classes=num_classes)
+    model = DasConv2dModel(num_classes=num_classes)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     logger.info(f"Device: {device}")
@@ -142,7 +142,7 @@ def test(
 
     in_channels = int(ds.meta["shape"][1])  # shape is [N, C, T, F]
     num_classes = len(ds.classes)
-    model = DasConv2dModel(in_channels=in_channels, num_classes=num_classes)
+    model = DasConv2dModel(num_classes=num_classes)
 
     device = cfg.run.device if getattr(cfg.run, "device", None) else ("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
