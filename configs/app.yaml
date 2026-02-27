@@ -6,7 +6,7 @@ run:
   splits_dir: "data/splits"   
 
 dataset:
-  root: "data/memmap"
+  root: "data/main"
   classes:
     - construction
     - manipulation
