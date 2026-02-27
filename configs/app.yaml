@@ -18,7 +18,7 @@ dataset:
     test: 0.1
 
 train:
-  epochs: 200
+  epochs: 100
   batch_size: 128
   num_workers: 8
   lr: 3e-4
@@ -29,6 +29,6 @@ train:
   imbalance:
     enabled: true
     method: "weights"         # "weights" | "sampler" | "both"
-    power: 1.0
+    power: 0.5
     min_count: 1
-    max_weight: 20
+    max_weight: 2

@@ -48,7 +48,8 @@ class DASDataset(Dataset):
     def __getitem__(self, i: int):
         j = int(self.indices[i])
         # memmap slice is already contiguous enough; np.array(copy=False) avoids extra copy
-        x = torch.from_numpy(np.array(self.X[j], copy=False))  # (C, T, F)
+        #x = torch.from_numpy(np.array(self.X[j], copy=False))  # (C, T, F)
+        x = torch.as_tensor(self.X[j])
         y = torch.tensor(int(self.y[j]), dtype=torch.long)
         return x, y
 
