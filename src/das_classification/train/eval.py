@@ -29,7 +29,7 @@ def evaluate(model: nn.Module, loader: DataLoader, device: str) -> EvalResult:
         x = x.to(device)
         y = y.to(device)
 
-        x = x.unsqueeze(1)
+        #x = x.unsqueeze(1)
 
         logits = model(x)
         loss = F.cross_entropy(logits, y)

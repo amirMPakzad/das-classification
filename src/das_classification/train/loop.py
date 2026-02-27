@@ -56,7 +56,7 @@ def train_loop(
             x = x.to(device)
             y = y.to(device)
 
-            x = x.unsqueeze(1)
+            #x = x.unsqueeze(1)
 
             logits = model(x)
             loss = F.cross_entropy(
