@@ -18,8 +18,14 @@ from .history import JsonlHistoryWriter
 @dataclass
 class TrainConfig:
     epochs: int = 20
-    lr: float = 1e-3
-    weight_decay: float = 1e-4
+    lr: float = 6e-4
+    weight_decay: float = 1e-2
+    lr_scheduler: str = "cosine"  # "none" | "cosine" | "step" | "plateau"
+    min_lr: float = 1e-5
+    step_size: int = 15
+    step_gamma: float = 0.5
+    plateau_factor: float = 0.5
+    plateau_patience: int = 3
     grad_clip: float = 1.0
     log_interval: int = 20
     save_dir: str = "runs"
@@ -35,6 +41,30 @@ def train_loop(
 ) -> None:
     model.to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+    sched_name = cfg.lr_scheduler.lower()
+    scheduler = None
+    if sched_name == "cosine":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt,
+            T_max=max(1, cfg.epochs),
+            eta_min=cfg.min_lr,
+        )
+    elif sched_name == "step":
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            opt,
+            step_size=max(1, cfg.step_size),
+            gamma=cfg.step_gamma,
+        )
+    elif sched_name == "plateau":
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            opt,
+            mode="min",
+            factor=cfg.plateau_factor,
+            patience=max(0, cfg.plateau_patience),
+            min_lr=cfg.min_lr,
+        )
+    elif sched_name != "none":
+        raise ValueError("cfg.lr_scheduler must be one of: 'none', 'cosine', 'step', 'plateau'")
 
     save_dir = Path(cfg.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -52,7 +82,7 @@ def train_loop(
         n_batches = 0
 
         for batch in train_loader:
-            x, y = batch 
+            x, y = batch
             x = x.to(device)
             y = y.to(device)
 
@@ -60,7 +90,7 @@ def train_loop(
 
             logits = model(x)
             loss = F.cross_entropy(
-                logits, 
+                logits,
                 y,
                 weight=(class_weights.to(device) if class_weights is not None else None),
                 label_smoothing=0.05,
@@ -103,11 +133,25 @@ def train_loop(
             val = evaluate(model, val_loader, device)
             val_loss = float(val.loss)
             val_acc = float(val.acc)
-            print(f"epoch {epoch:03d} | train loss {train_loss:.4f} acc {train_acc:.3f} | val loss {val_loss:.4f} acc {val_acc:.3f}")
         else:
             val_loss = float("nan")
             val_acc = float("nan")
-            print(f"epoch {epoch:03d} | train loss {train_loss:.4f} acc {train_acc:.3f}")
+
+        if scheduler is not None:
+            if sched_name == "plateau":
+                metric = val_loss if val_loader is not None else train_loss
+                scheduler.step(metric)
+            else:
+                scheduler.step()
+
+        current_lr = float(opt.param_groups[0]["lr"])
+        if val_loader is not None:
+            print(
+                f"epoch {epoch:03d} | train loss {train_loss:.4f} acc {train_acc:.3f} | "
+                f"val loss {val_loss:.4f} acc {val_acc:.3f} | lr {current_lr:.6g}"
+            )
+        else:
+            print(f"epoch {epoch:03d} | train loss {train_loss:.4f} acc {train_acc:.3f} | lr {current_lr:.6g}")
 
         # epoch-level history record
         history.log({
@@ -118,6 +162,7 @@ def train_loop(
             "train_acc": train_acc,
             "val_loss": val_loss,
             "val_acc": val_acc,
+            "lr": current_lr,
         })
 
         # checkpoints
