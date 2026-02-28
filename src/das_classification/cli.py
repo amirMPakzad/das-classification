@@ -23,7 +23,7 @@ from das_classification.data.splits import ensure_splits
 
 app = typer.Typer(no_args_is_help=True)
 
-DROP = None
+DROP = ["running", "walk"]
 
 
 @app.command()

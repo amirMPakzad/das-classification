@@ -17,15 +17,17 @@ from .history import JsonlHistoryWriter
 
 @dataclass
 class TrainConfig:
-    epochs: int = 20
-    lr: float = 6e-4
-    weight_decay: float = 1e-2
+    epochs: int = 60
+    lr: float = 6e-3
+    weight_decay: float = 1e-4
     lr_scheduler: str = "cosine"  # "none" | "cosine" | "step" | "plateau"
     min_lr: float = 1e-5
-    step_size: int = 15
+    step_size: int = 10
     step_gamma: float = 0.5
     plateau_factor: float = 0.5
     plateau_patience: int = 3
+    fast_decay_after_epoch: int = 40
+    fast_decay_gamma: float = 0.9
     grad_clip: float = 1.0
     log_interval: int = 20
     save_dir: str = "runs"
@@ -143,6 +145,12 @@ def train_loop(
                 scheduler.step(metric)
             else:
                 scheduler.step()
+
+        # Optional second-phase decay: after a threshold epoch, decay LR faster.
+        if epoch > cfg.fast_decay_after_epoch:
+            for pg in opt.param_groups:
+                new_lr = float(pg["lr"]) * cfg.fast_decay_gamma
+                pg["lr"] = max(cfg.min_lr, new_lr)
 
         current_lr = float(opt.param_groups[0]["lr"])
         if val_loader is not None:

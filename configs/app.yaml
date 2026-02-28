@@ -18,7 +18,7 @@ dataset:
     test: 0.1
 
 train:
-  epochs: 100
+  epochs: 60
   batch_size: 128
   num_workers: 8
   lr: 6e-4
